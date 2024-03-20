@@ -5,10 +5,12 @@ import "../contracts/interfaces/IDiamondCut.sol";
 import "../contracts/facets/DiamondCutFacet.sol";
 import "../contracts/facets/DiamondLoupeFacet.sol";
 import "../contracts/facets/OwnershipFacet.sol";
+import "../contracts/facets/ERC20Facet.sol";
+import "../contracts/facets/StakingFacet.sol";
 
-import "../contracts/facets/LayoutChangerFacet.sol";
 import "forge-std/Test.sol";
 import "../contracts/Diamond.sol";
+import "../contracts/ERC20Reward.sol";
 
 import "../contracts/libraries/LibAppStorage.sol";
 
@@ -18,15 +20,19 @@ contract DiamondDeployer is Test, IDiamondCut {
     DiamondCutFacet dCutFacet;
     DiamondLoupeFacet dLoupe;
     OwnershipFacet ownerF;
-    LayoutChangerFacet lFacet;
+    ERC20Facet erc20F;
+    StakingFacet stakingF;
+    ERC20Reward erc20R;
 
     function setUp() public {
         //deploy facets
         dCutFacet = new DiamondCutFacet();
-        diamond = new Diamond(address(this), address(dCutFacet));
+        diamond = new Diamond(address(this), address(dCutFacet), "stakeer", "STK", 18);
         dLoupe = new DiamondLoupeFacet();
         ownerF = new OwnershipFacet();
-        lFacet = new LayoutChangerFacet();
+        erc20F = new ERC20Facet();
+        erc20R = new ERC20Reward();
+        stakingF = new StakingFacet(address(erc20F), address(erc20R));
 
         //upgrade diamond with facets
 
@@ -48,13 +54,13 @@ contract DiamondDeployer is Test, IDiamondCut {
                 functionSelectors: generateSelectors("OwnershipFacet")
             })
         );
-        cut[2] = (
-            FacetCut({
-                facetAddress: address(lFacet),
-                action: FacetCutAction.Add,
-                functionSelectors: generateSelectors("LayoutChangerFacet")
-            })
-        );
+        // cut[2] = (
+        //     FacetCut({
+        //         facetAddress: address(lFacet),
+        //         action: FacetCutAction.Add,
+        //         functionSelectors: generateSelectors("LayoutChangerFacet")
+        //     })
+        // );
 
         //upgrade diamond
         IDiamondCut(address(diamond)).diamondCut(cut, address(0x0), "");
@@ -63,26 +69,26 @@ contract DiamondDeployer is Test, IDiamondCut {
         DiamondLoupeFacet(address(diamond)).facetAddresses();
     }
 
-    function testLayoutfacet() public {
-        LayoutChangerFacet l = LayoutChangerFacet(address(diamond));
-        // l.getLayout();
-        l.ChangeNameAndNo(777, "one guy");
+    // function testLayoutfacet() public {
+    //     LayoutChangerFacet l = LayoutChangerFacet(address(diamond));
+    //     // l.getLayout();
+    //     l.ChangeNameAndNo(777, "one guy");
 
-        //check outputs
-        LibAppStorage.Layout memory la = l.getLayout();
+    //     //check outputs
+    //     LibAppStorage.Layout memory la = l.getLayout();
 
-        assertEq(la.name, "one guy");
-        assertEq(la.currentNo, 777);
-    }
+    //     assertEq(la.name, "one guy");
+    //     assertEq(la.currentNo, 777);
+    // }
 
-    function testLayoutfacet2() public {
-        LayoutChangerFacet l = LayoutChangerFacet(address(diamond));
-        //check outputs
-        LibAppStorage.Layout memory la = l.getLayout();
+    // function testLayoutfacet2() public {
+    //     LayoutChangerFacet l = LayoutChangerFacet(address(diamond));
+    //     //check outputs
+    //     LibAppStorage.Layout memory la = l.getLayout();
 
-        assertEq(la.name, "one guy");
-        assertEq(la.currentNo, 777);
-    }
+    //     assertEq(la.name, "one guy");
+    //     assertEq(la.currentNo, 777);
+    // }
 
     function generateSelectors(
         string memory _facetName

@@ -11,11 +11,13 @@ pragma solidity ^0.8.9;
 import {LibDiamond} from "./libraries/LibDiamond.sol";
 import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
 
-import {LibAppStorage} from "../libraries/LibAppStorage.sol";
+import {LibAppStorage} from "./libraries/LibAppStorage.sol";
 
 contract Diamond {
-    LibAppStorage.Layout s;
-    constructor(address _contractOwner, address _diamondCutFacet, uint256 totalSupply, string memory name, string memory  symbol, uint8 decimal) payable {
+    LibAppStorage.Layout erc20;
+    LibAppStorage.LayoutS staking;
+
+    constructor(address _contractOwner, address _diamondCutFacet, string memory name, string memory  symbol, uint8 decimal) payable {
         LibDiamond.setContractOwner(_contractOwner);
 
         // Add the diamondCut external function from the diamondCutFacet
@@ -29,10 +31,12 @@ contract Diamond {
         });
         LibDiamond.diamondCut(cut, address(0), "");
 
-        s._name = name;   
-        s._totalSupply = totalSupply * 10**decimal;
-        s._symbol = symbol;
-        s._decimal = decimal;  
+        erc20._name = name;   
+        erc20._symbol = symbol;
+        erc20._decimal = decimal;  
+        erc20._owner = msg.sender;
+
+        staking.APY = 12000;
     }
 
     // Find facet for function that is called and execute the

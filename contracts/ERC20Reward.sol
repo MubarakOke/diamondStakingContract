@@ -2,34 +2,40 @@
 
 pragma solidity ^0.8.9;
 
-import {LibAppStorage} from "../libraries/LibAppStorage.sol";
-import "../interfaces/IERC20.sol";
+import "./interfaces/IERC20.sol";
 
-contract ERC20Facet is IERC20 {
-    LibAppStorage.Layout appStorage;
+contract ERC20Reward is IERC20 {
+    mapping(address => uint256)  _balances;
+    mapping(address => mapping(address => uint256))  _allowances;
+    uint256  _totalSupply;
+    string  _name;
+    string  _symbol;
+    uint8 _decimal;
+    address _owner;
+
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "Only the owner can call this function");
+        _; // Continue with the function if the sender is the owner
+    }
 
     function name() public view returns (string memory) {
-        return appStorage._name;
+        return _name;
     }
 
     function symbol() public view returns (string memory) {
-        return appStorage._symbol;
+        return _symbol;
     }
 
     function decimals() public view returns (uint8) {
-        return appStorage._decimal;
+        return _decimal;
     }
 
     function totalSupply() public view override returns (uint256) {
-        return appStorage._totalSupply;
-    }
-
-    function totalSupply() public view override returns (uint256) {
-        return appStorage._totalSupply;
+        return _totalSupply;
     }
 
     function balanceOf(address account) public view override returns (uint256) {
-        return appStorage._balances[account];
+        return _balances[account];
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
@@ -48,16 +54,8 @@ contract ERC20Facet is IERC20 {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
-        appStorage._allowances[owner][spender] = amount;
+        _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
-    }
-
-    function mint(address to, uint256 amount) external onlyOwner {
-        ajidokwu.to = to;
-        ajidokwu.amount = amount;
-        require(ajidokwu.totalSupply + ajidokwu.amount >= ajidokwu.totalSupply, "OverFlow detected");
-        ajidokwu.balances[to] += ajidokwu.amount;
-        ajidokwu.totalSupply += ajidokwu.amount;
     }
 
     function mint(address to, uint256 amount) external onlyOwner {
@@ -69,10 +67,10 @@ contract ERC20Facet is IERC20 {
 
         _beforeTokenTransfer(address(0), account, amount);
 
-        appStorage._totalSupply += amount;
+        _totalSupply += amount;
         unchecked {
             // Overflow not possible: balance + amount is at most totalSupply + amount, which is checked above.
-            appStorage._balances[account] += amount;
+            _balances[account] += amount;
         }
         emit Transfer(address(0), account, amount);
 
@@ -87,7 +85,7 @@ contract ERC20Facet is IERC20 {
     }
 
     function allowance(address owner, address spender) public view override returns (uint256) {
-        return appStorage._allowances[owner][spender];
+        return _allowances[owner][spender];
     }
 
     function _transfer(address from, address to, uint256 amount) internal {
@@ -96,13 +94,13 @@ contract ERC20Facet is IERC20 {
 
         _beforeTokenTransfer(from, to, amount);
 
-        uint256 fromBalance = appStorage._balances[from];
+        uint256 fromBalance = _balances[from];
         require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
         unchecked {
-            appStorage._balances[from] = fromBalance - amount;
+            _balances[from] = fromBalance - amount;
             // Overflow not possible: the sum of all balances is capped by totalSupply, and the sum is preserved by
             // decrementing then incrementing.
-            appStorage._balances[to] += amount;
+            _balances[to] += amount;
         }
 
         emit Transfer(from, to, amount);
